@@ -60,7 +60,9 @@ function card(it){if(it.getAttribute("data-dots-c"))return;
   var d=$(".item-description",it),pr=$(".js-price-display",it);if(!d||!pr)return;
   it.setAttribute("data-dots-c","1");it.classList.add("pxd-nt");
   var p=parseMoney(pr.textContent),cp=$(".js-compare-price-display",it),c=cp?parseMoney(cp.textContent):0;
+  [pr,cp].forEach(function(el){if(el&&/,00\s*$/.test(el.textContent))el.textContent=el.textContent.trim().replace(/,00$/,"")});
   if(cp&&c>p&&cp.style.display!=="none"){cp.classList.add("pxd-cp");
+    var pc=$(".item-price-container",it);if(pc&&cp.parentNode!==pc){var top=pr;while(top.parentNode&&top.parentNode!==pc)top=top.parentNode;if(top.parentNode===pc)pc.insertBefore(cp,top.nextSibling)}
     var im=$(".item-image",it)||$(".product-item-image-container",it);
     if(im&&!$(".pxd-tag",im)){var t=document.createElement("span");t.className="pxd-tag";t.textContent="-"+Math.round((1-p/c)*100)+"%";im.appendChild(t)}}
   if(p){var n=cuotas(p),fj=document.createElement("div");
