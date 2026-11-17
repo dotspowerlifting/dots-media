@@ -112,7 +112,12 @@ function wa(){if($(".pxd-glo"))return;try{if(sessionStorage.getItem("dots-wa-x")
   var x=$(".pxd-glo-x",g);if(x)x.addEventListener("click",function(){g.classList.remove("on");try{sessionStorage.setItem("dots-wa-x","1")}catch(e){}setTimeout(function(){g.remove()},400)});
   setTimeout(function(){g.classList.add("on")},6000)}
 
-function run(){home();cards();pdp();wa();
+/* ---------- Animación de aparición al bajar ---------- */
+function reveal(){if(!("IntersectionObserver" in window))return;
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}})},{rootMargin:"0px 0px -8% 0px"});
+  $$(".pxd-rv").forEach(function(el){if(el.getBoundingClientRect().top>window.innerHeight){el.classList.remove("in");io.observe(el)}})}
+
+function run(){home();cards();pdp();wa();reveal();
   new MutationObserver(function(ms){var add=false;ms.forEach(function(m){if(m.addedNodes.length)add=true});if(add){cards();if(document.body.classList.contains("template-product"))rel()}}).observe(document.body,{childList:true,subtree:true})}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",run);else run();
 })();
