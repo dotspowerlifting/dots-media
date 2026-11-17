@@ -15,7 +15,7 @@ var ARROW='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="curre
 function $(s,r){return (r||document).querySelector(s)}
 function $$(s,r){return [].slice.call((r||document).querySelectorAll(s))}
 function tpl(id){var t=document.getElementById(id);if(!t)return null;var d=document.createElement("div");d.innerHTML=t.innerHTML;return d}
-function money(n){return "$"+Math.round(n).toLocaleString("es-AR")}
+function money(n){n=Math.round(n*100)/100;return "$"+(n%1===0?n.toLocaleString("es-AR"):n.toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2}))}
 function parseMoney(t){if(!t)return 0;t=String(t).replace(/[^\d,\.]/g,"");t=t.replace(/,\d{1,2}$/,"").replace(/\./g,"").replace(/,/g,"");return parseInt(t,10)||0}
 function cuotas(p){return p>=200000?6:p>=125000?3:p>=80000?2:0}
 function head(t){return '<div class="pxd-head pxd-rv in"><div><h2 class="pxd-h2">'+t+'</h2></div><span class="pxd-link"><a href="/productos/">Ver todos '+ARROW+'</a></span></div>'}
@@ -80,10 +80,17 @@ function pdp(){if(!document.body.classList.contains("template-product"))return;
   if(pc&&pd&&!$(".px-ep",pc)){var t=tpl("dots-tpl-ep");if(t){var ep=t.firstElementChild;pc.insertBefore(ep,pc.firstChild);
     function upd(){var p=parseInt(pd.getAttribute("data-product-price"),10);p=p?p/100:parseMoney(pd.textContent);if(!p)return;
       var n=$$(".px-ep-n",ep),s=$$(".px-ep-sub",ep),k=cuotas(p);
+      var cpd=$("#compare_price_display"),c=cpd&&cpd.style.display!=="none"?parseMoney(cpd.textContent):0,top=$(".px-ep-top",ep);
+      if(c>p){if(!top){top=document.createElement("div");top.className="px-ep-top";var u=$(".px-ep-uno",ep);ep.insertBefore(top,u)}top.innerHTML='<span class="px-ep-lista">'+money(c)+'</span><span class="px-ep-off">'+Math.round((1-p/c)*100)+'% OFF</span>'}else if(top){top.remove()}
       if(n[0])n[0].textContent=money(p);if(n[1])n[1].textContent=money(p*0.9);
       if(s[0])s[0].textContent="Por transferencia · ahorrás "+money(p*0.1);
       var tr=$(".px-ep-tres",ep);if(tr){tr.style.display=k?"":"none";if(k){$(".px-ep-et",tr).textContent=k+" cuotas sin interés de";if(n[2])n[2].textContent=money(p/k)}}}
-    upd();new MutationObserver(upd).observe(pd,{attributes:true,childList:true,characterData:true,subtree:true})}}
+    upd();new MutationObserver(upd).observe(pd,{attributes:true,childList:true,characterData:true,subtree:true});
+    var cpd0=$("#compare_price_display");if(cpd0)new MutationObserver(upd).observe(cpd0,{attributes:true,childList:true,characterData:true,subtree:true});
+    setTimeout(function(){$$(".px-ep-oro",ep).forEach(function(o){o.style.width=o.getAttribute("data-fin")||"100%"});setTimeout(function(){ep.classList.add("px-ep-listo")},1200)},100)}}
+  var act=$(".breadcrumbs .crumb.active");if(act&&act.previousElementSibling&&act.previousElementSibling.classList.contains("separator"))act.previousElementSibling.classList.add("px-fc-no");
+  $$(".js-product-variants-group").forEach(function(g){var o=$$("option",g).length,b=$$("a,button",g).length;if((o&&o<=1)||(!o&&b<=1))g.classList.add("px-fc-una")});
+  $$(".js-addtocart").forEach(function(b){b.classList.add("px-cta")});
   var form=$(".js-product-form");
   if(form&&!$(".px-epb",form)){var t2=tpl("dots-tpl-epb");if(t2){var eb=t2.firstElementChild,h=$("h1"),nm=h?h.textContent.trim():"";
     var w=$(".px-ep-wsp",eb);if(w)w.href="https://wa.me/"+WA+"?text="+encodeURIComponent("¡Hola DOTS! Quería consultar por este producto:\n"+nm.toUpperCase());
