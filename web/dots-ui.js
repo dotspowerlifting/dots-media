@@ -17,6 +17,7 @@ function $$(s,r){return [].slice.call((r||document).querySelectorAll(s))}
 function tpl(id){var t=document.getElementById(id);if(!t)return null;var d=document.createElement("div");d.innerHTML=t.innerHTML;return d}
 function money(n){n=Math.round(n*100)/100;return "$"+(n%1===0?n.toLocaleString("es-AR"):n.toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2}))}
 function parseMoney(t){if(!t)return 0;t=String(t).replace(/[^\d,\.]/g,"");t=t.replace(/,\d{1,2}$/,"").replace(/\./g,"").replace(/,/g,"");return parseInt(t,10)||0}
+function moneyR(n){return "$"+Math.round(n).toLocaleString("es-AR")}
 function cuotas(p){return p>=200000?6:p>=125000?3:p>=80000?2:0}
 function head(t){return '<div class="pxd-head pxd-rv in"><div><h2 class="pxd-h2">'+t+'</h2></div><span class="pxd-link"><a href="/productos/">Ver todos '+ARROW+'</a></span></div>'}
 
@@ -66,8 +67,8 @@ function card(it){if(it.getAttribute("data-dots-c"))return;
     var im=$(".item-image",it)||$(".product-item-image-container",it);
     if(im&&!$(".pxd-tag",im)){var t=document.createElement("span");t.className="pxd-tag";t.textContent="-"+Math.round((1-p/c)*100)+"%";im.appendChild(t)}}
   if(p){var n=cuotas(p),fj=document.createElement("div");
-    if(n){fj.className="pxd-fj";fj.innerHTML="<span>"+n+" cuotas sin interés de</span><b>"+money(p/n)+"</b>"}
-    else{fj.className="pxd-fj t";fj.innerHTML="<span>Con transferencia</span><b>"+money(p*0.9)+"</b>"}
+    if(n){fj.className="pxd-fj";fj.innerHTML="<span>"+n+" cuotas sin interés de</span><b>"+moneyR(p/n)+"</b>"}
+    else{fj.className="pxd-fj t";fj.innerHTML="<span>Con transferencia</span><b>"+moneyR(p*0.9)+"</b>"}
     var lk=$(".item-link",d);if(lk)lk.parentNode.insertBefore(fj,lk.nextSibling);else d.appendChild(fj)}
   var a=$("a[href]",it);if(a){var b=document.createElement("a");b.className="pxd-card-b";b.href=a.getAttribute("href");b.textContent="Ver producto";d.appendChild(b)}
 }
@@ -109,12 +110,12 @@ function thumbs(){var sw=$(".js-swiper-product");if(!sw||$(".px-fc-th"))return;
   function mark(){var x=sw.swiper;if(!x)return;var k=x.realIndex!=null?x.realIndex:x.activeIndex;$$(".px-fc-mini",box).forEach(function(b,j){b.classList.toggle("px-on",j===k)})}
   var tries=0;(function hook(){if(sw.swiper&&sw.swiper.on){sw.swiper.on("slideChange",mark);mark()}else if(tries++<40)setTimeout(hook,250)})();
 }
-function rel(){var r=$(".js-related-products");if(!r||r.classList.contains("pxd-anch"))return;
+function rel(){$$(".js-related-products,.js-complementary-products").forEach(function(r){if(r.classList.contains("pxd-anch"))return;
   var n=$$(".js-item-product",r).filter(function(x){return !x.classList.contains("swiper-slide-duplicate")}).length;
-  r.classList.add("pxd-anch");r.style.setProperty("--pxd-n",Math.min(Math.max(n,1),5))}
+  r.classList.add("pxd-anch");r.style.setProperty("--pxd-n",Math.min(Math.max(n,1),5))})}
 
 /* ---------- Burbuja de WhatsApp ---------- */
-function wa(){if($(".pxd-glo"))return;try{if(sessionStorage.getItem("dots-wa-x"))return}catch(e){}
+function wa(){if($(".pxd-glo")||/^\/(comprar|checkout)/.test(location.pathname))return;try{if(sessionStorage.getItem("dots-wa-x"))return}catch(e){}
   var t=tpl("dots-tpl-wa");if(!t)return;var g=t.firstElementChild;g.style.right="92px";g.style.bottom="12px";document.body.appendChild(g);
   var x=$(".pxd-glo-x",g);if(x)x.addEventListener("click",function(){g.classList.remove("on");try{sessionStorage.setItem("dots-wa-x","1")}catch(e){}setTimeout(function(){g.remove()},400)});
   setTimeout(function(){g.classList.add("on")},6000)}
