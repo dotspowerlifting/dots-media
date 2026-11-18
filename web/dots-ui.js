@@ -126,7 +126,14 @@ function thumbs(){var sw=$(".js-swiper-product");if(!sw||$(".px-fc-th"))return;
 }
 function rel(){$$(".js-related-products,.js-complementary-products").forEach(function(r){if(r.classList.contains("pxd-anch"))return;
   var n=$$(".js-item-product",r).filter(function(x){return !x.classList.contains("swiper-slide-duplicate")}).length;
-  r.classList.add("pxd-anch");r.style.setProperty("--pxd-n",Math.min(Math.max(n,1),5))})}
+  r.classList.add("pxd-anch");r.style.setProperty("--pxd-n",Math.min(Math.max(n,1),5));mismoColor(r)})}
+/* Cross-selling: primero los productos del mismo color que el que se está mirando */
+function colorDe(t){t=String(t||"").toUpperCase().trim();var i=t.lastIndexOf(" - ");return i>0?t.slice(i+3).replace(/\s+/g," ").trim():""}
+function mismoColor(r){var c=colorDe(($("h1")||{}).textContent);if(!c)return;
+  var its=$$(".js-item-product",r).filter(function(x){return !x.classList.contains("swiper-slide-duplicate")});if(its.length<2)return;
+  var par=its[0].parentNode,igual=[],resto=[];its.forEach(function(x){var nm=($(".item-name",x)||x).textContent;(colorDe(nm)===c?igual:resto).push(x)});
+  if(!igual.length)return;igual.concat(resto).forEach(function(x){par.appendChild(x)});
+  $$(".swiper-slide-duplicate",par).forEach(function(x){par.appendChild(x)})}
 
 /* ---------- Burbuja de WhatsApp ---------- */
 function wa(){if($(".pxd-glo")||/^\/(comprar|checkout)/.test(location.pathname))return;try{if(sessionStorage.getItem("dots-wa-x"))return}catch(e){}
