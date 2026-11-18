@@ -168,12 +168,28 @@ function editor(){if(!enEditor()||SUBIDAS.indexOf("__")===0||$("#dots-ed-css"))r
       inp.click()})
   })}
 
+
+/* ---------- Textos editables (web/textos.json en GitHub) ---------- */
+var TEXTOS=null;
+function claveVideo(v){var u=v.getAttribute("src")||v.getAttribute("data-dpsrc")||"";var m=u.match(/\/(t\d+)\.mp4/);return m?m[1]:""}
+function aplicarTextos(){if(!TEXTOS||!TEXTOS.testimonios)return;$$(".pxd-vt").forEach(function(f){var v=$("video",f),c=$("figcaption",f);if(!v||!c)return;var k=claveVideo(v);if(k&&TEXTOS.testimonios[k]!=null)c.textContent=TEXTOS.testimonios[k]})}
+function cargarTextos(){if(!$(".pxd-vt"))return Promise.resolve();return fetch(MEDIA+"textos.json"+(enEditor()?"?t="+Date.now():""),{cache:enEditor()?"no-store":"default"}).then(function(r){return r.ok?r.json():null}).then(function(j){if(j){TEXTOS=j;aplicarTextos()}}).catch(function(){})}
+function b64txt(t){return btoa(unescape(encodeURIComponent(t)))}
+function guardarTextos(clave){var body=JSON.stringify(TEXTOS,null,1);return shaDe("web/textos.json").then(function(sha){var b={message:"Editor: textos actualizados",content:b64txt(body),branch:"main"};if(sha)b.sha=sha;
+  return fetch(SUBIDAS+"?path=web/textos.json",{method:"PUT",headers:{"content-type":"application/json","x-dots-clave":clave},body:JSON.stringify(b)}).then(function(r){return r.text().then(function(t){if(!r.ok)throw new Error(t||("Error "+r.status))})})})}
+function editorTextos(){$$(".pxd-vt").forEach(function(f){if(f.getAttribute("aria-hidden")==="true")return;var v=$("video",f),c=$("figcaption",f),k=v&&claveVideo(v);if(!c||!k)return;
+  var w=$(".dots-ed",f);if(!w)return;var bt=document.createElement("button");bt.type="button";bt.textContent="✏️ Editar texto";w.insertBefore(bt,w.children[1]||null);var msg=$("span",w);
+  bt.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();var nuevo=prompt("Texto que aparece sobre el video:",c.textContent);if(nuevo==null)return;nuevo=nuevo.trim();
+    TEXTOS=TEXTOS||{};TEXTOS.testimonios=TEXTOS.testimonios||{};var antes=TEXTOS.testimonios[k];TEXTOS.testimonios[k]=nuevo;aplicarTextos();msg.style.display="";msg.textContent="Guardando texto…";
+    pedirClave().then(function(cl){return guardarTextos(cl)}).then(function(){msg.textContent="✓ Texto guardado. En la web pública se ve en unos 5 minutos."})
+    .catch(function(er){TEXTOS.testimonios[k]=antes;aplicarTextos();msg.textContent="No se pudo guardar: "+er.message})})})}
+
 /* ---------- Animación de aparición al bajar ---------- */
 function reveal(){if(!("IntersectionObserver" in window))return;
   var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}})},{rootMargin:"0px 0px -8% 0px"});
   $$(".pxd-rv").forEach(function(el){if(el.getBoundingClientRect().top>window.innerHeight){el.classList.remove("in");io.observe(el)}})}
 
-function run(){home();cards();pdp();wa();reveal();try{editor()}catch(e){}
+function run(){home();cards();pdp();wa();reveal();try{editor()}catch(e){}cargarTextos().then(function(){try{if(enEditor()&&SUBIDAS.indexOf("__")!==0)editorTextos()}catch(e){}});
   new MutationObserver(function(ms){var add=false;ms.forEach(function(m){if(m.addedNodes.length)add=true});if(add){cards();if(document.body.classList.contains("template-product"))rel()}}).observe(document.body,{childList:true,subtree:true})}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",run);else run();
 })();

@@ -28,7 +28,7 @@ export default {
 
     if (!env.CLAVE || !env.GITHUB_TOKEN) return new Response("Falta configurar CLAVE o GITHUB_TOKEN", { status: 500, headers: CORS });
     if (req.headers.get("x-dots-clave") !== env.CLAVE) return new Response("Clave incorrecta", { status: 401, headers: CORS });
-    if (!/^web\/[a-z0-9_\-\/]+\.(mp4|jpg|jpeg|png|webp)$/.test(path) || path.includes(".."))
+    if (!/^web\/[a-z0-9_\-\/]+\.(mp4|jpg|jpeg|png|webp|json)$/.test(path) || path.includes(".."))
       return new Response("Ruta no permitida", { status: 400, headers: CORS });
 
     // El navegador ya manda el JSON listo para la API de GitHub ({message, content(base64), sha?}).
