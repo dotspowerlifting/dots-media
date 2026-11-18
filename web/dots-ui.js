@@ -172,8 +172,8 @@ function editor(){if(!enEditor()||SUBIDAS.indexOf("__")===0||$("#dots-ed-css"))r
 /* ---------- Textos editables (web/textos.json en GitHub) ---------- */
 var TEXTOS=null;
 function claveVideo(v){var u=v.getAttribute("src")||v.getAttribute("data-dpsrc")||"";var m=u.match(/\/(t\d+)\.mp4/);return m?m[1]:""}
-function aplicarTextos(){if(!TEXTOS||!TEXTOS.testimonios)return;$$(".pxd-vt").forEach(function(f){var v=$("video",f),c=$("figcaption",f);if(!v||!c)return;var k=claveVideo(v);if(k&&TEXTOS.testimonios[k]!=null)c.textContent=TEXTOS.testimonios[k]})}
-function cargarTextos(){if(!$(".pxd-vt"))return Promise.resolve();return fetch(MEDIA+"textos.json"+(enEditor()?"?t="+Date.now():""),{cache:enEditor()?"no-store":"default"}).then(function(r){return r.ok?r.json():null}).then(function(j){if(j){TEXTOS=j;aplicarTextos()}}).catch(function(){})}
+function aplicarTextos(){aplicarFotos();if(!TEXTOS||!TEXTOS.testimonios)return;$$(".pxd-vt").forEach(function(f){var v=$("video",f),c=$("figcaption",f);if(!v||!c)return;var k=claveVideo(v);if(k&&TEXTOS.testimonios[k]!=null)c.textContent=TEXTOS.testimonios[k]})}
+function cargarTextos(){if(!$(".pxd-vt")&&!$(".pxd-cat"))return Promise.resolve();return fetch(MEDIA+"textos.json"+(enEditor()?"?t="+Date.now():""),{cache:enEditor()?"no-store":"default"}).then(function(r){return r.ok?r.json():null}).then(function(j){if(j){TEXTOS=j;aplicarTextos()}}).catch(function(){})}
 function b64txt(t){return btoa(unescape(encodeURIComponent(t)))}
 function guardarTextos(clave){var body=JSON.stringify(TEXTOS,null,1);return shaDe("web/textos.json").then(function(sha){var b={message:"Editor: textos actualizados",content:b64txt(body),branch:"main"};if(sha)b.sha=sha;
   return fetch(SUBIDAS+"?path=web/textos.json",{method:"PUT",headers:{"content-type":"application/json","x-dots-clave":clave},body:JSON.stringify(b)}).then(function(r){return r.text().then(function(t){if(!r.ok)throw new Error(t||("Error "+r.status))})})})}
@@ -184,12 +184,32 @@ function editorTextos(){$$(".pxd-vt").forEach(function(f){if(f.getAttribute("ari
     pedirClave().then(function(cl){return guardarTextos(cl)}).then(function(){msg.textContent="✓ Texto guardado. En la web pública se ve en unos 5 minutos."})
     .catch(function(er){TEXTOS.testimonios[k]=antes;aplicarTextos();msg.textContent="No se pudo guardar: "+er.message})})})}
 
+
+/* ---------- Fotos editables desde el editor (categorías y fondo de destacados) ---------- */
+function slugCat(a){return ((a.getAttribute("href")||"").replace(/https?:\/\/[^\/]+/,"").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase())||"cat"}
+function aplicarFotos(){var F=TEXTOS&&TEXTOS.fotos;if(!F)return;
+  $$(".pxd-cat").forEach(function(a){var k="cat-"+slugCat(a),img=$("img",a);if(F[k]&&img)img.src=MEDIA+F[k]});
+  var fo=$("#destacados .pxd-fondo");if(fo&&F["fondo-destacados"])fo.style.backgroundImage='url("'+MEDIA+F["fondo-destacados"]+'")'}
+function achicar(file,max){return new Promise(function(ok,ko){var im=new Image();im.onload=function(){var w=im.naturalWidth,h=im.naturalHeight,r=Math.min(1,max/Math.max(w,h));var c=document.createElement("canvas");c.width=Math.round(w*r);c.height=Math.round(h*r);c.getContext("2d").drawImage(im,0,0,c.width,c.height);c.toBlob(function(b){b?ok(b):ko(new Error("No se pudo leer la imagen"))},"image/jpeg",0.85)};im.onerror=function(){ko(new Error("No se pudo leer la imagen"))};im.src=URL.createObjectURL(file)})}
+function botonFoto(box,clave,alCambiar){if(getComputedStyle(box).position==="static")box.style.position="relative";
+  var w=document.createElement("div");w.className="dots-ed";w.innerHTML='<button type="button">📷 Cambiar foto</button><span style="display:none"></span>';box.appendChild(w);
+  var bt=$("button",w),msg=$("span",w);function info(t){msg.style.display=t?"":"none";msg.textContent=t}
+  bt.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();var inp=document.createElement("input");inp.type="file";inp.accept="image/*";
+    inp.onchange=function(){var f=inp.files[0];if(!f)return;var cl,ruta="fotos/"+clave+"-"+Date.now()+".jpg",antes;bt.style.opacity=".6";
+      pedirClave().then(function(c){cl=c;info("Subiendo foto…");return achicar(f,1400)}).then(function(b){return subir("web/"+ruta,b,cl)})
+      .then(function(){TEXTOS=TEXTOS||{};TEXTOS.fotos=TEXTOS.fotos||{};antes=TEXTOS.fotos[clave];TEXTOS.fotos[clave]=ruta;info("Guardando…");return guardarTextos(cl)})
+      .then(function(){alCambiar(URL.createObjectURL(f));info("✓ Listo. En la web pública se ve en unos 5 minutos.")})
+      .catch(function(er){if(TEXTOS&&TEXTOS.fotos){if(antes)TEXTOS.fotos[clave]=antes;else if(TEXTOS.fotos[clave]===ruta)delete TEXTOS.fotos[clave]}info("No se pudo subir: "+er.message)}).then(function(){bt.style.opacity=""})};
+    inp.click()})}
+function editorFotos(){$$(".pxd-cat").forEach(function(a){var f=$(".pxd-cat-f",a),img=$("img",a);if(!f||!img)return;botonFoto(f,"cat-"+slugCat(a),function(u){img.src=u})});
+  var d=$("#destacados"),fo=d&&$(".pxd-fondo",d);if(d&&fo){botonFoto(d,"fondo-destacados",function(u){fo.style.backgroundImage='url("'+u+'")'})}}
+
 /* ---------- Animación de aparición al bajar ---------- */
 function reveal(){if(!("IntersectionObserver" in window))return;
   var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}})},{rootMargin:"0px 0px -8% 0px"});
   $$(".pxd-rv").forEach(function(el){if(el.getBoundingClientRect().top>window.innerHeight){el.classList.remove("in");io.observe(el)}})}
 
-function run(){home();cards();pdp();wa();reveal();try{editor()}catch(e){}cargarTextos().then(function(){try{if(enEditor()&&SUBIDAS.indexOf("__")!==0)editorTextos()}catch(e){}});
+function run(){home();cards();pdp();wa();reveal();try{editor()}catch(e){}cargarTextos().then(function(){try{if(enEditor()&&SUBIDAS.indexOf("__")!==0){editorTextos();editorFotos()}}catch(e){}});
   new MutationObserver(function(ms){var add=false;ms.forEach(function(m){if(m.addedNodes.length)add=true});if(add){cards();if(document.body.classList.contains("template-product"))rel()}}).observe(document.body,{childList:true,subtree:true})}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",run);else run();
 })();
