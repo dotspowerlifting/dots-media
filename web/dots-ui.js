@@ -218,8 +218,8 @@ function editorFotos(){$$(".pxd-cat").forEach(function(a){var f=$(".pxd-cat-f",a
 /* ---------- Recomendador de talles ("¿Qué talle soy?") ---------- */
 var TALLES={
  sh:{nom:"Singlet hombre",cols:["Peso","Pecho","Cintura","Cadera"],u:["kg","cm","cm","cm"],rows:[
-  ["XS",[0,49],[86,91],[71,76],[86,91]],["S",[50,60],[91,96],[76,81],[91,96]],["M",[60,70],[96,101],[81,86],[96,101]],["L",[70,85],[101,106],[86,91],[101,106]],
-  ["XL",[85,100],[106,111],[91,96],[106,111]],["2XL",[100,115],[111,116],[96,101],[111,116]],["3XL",[115,130],[116,121],[101,106],[116,121]],["4XL",[130,145],[121,126],[106,111],[121,126]],["5XL",[145,999],[126,131],[111,116],[126,131]]]},
+  ["XS",[0,49],[0,91],[0,76],[0,91]],["S",[50,59],[92,96],[77,81],[92,96]],["M",[60,69],[97,101],[82,86],[97,101]],["L",[70,84],[102,106],[87,91],[102,106]],
+  ["XL",[85,99],[107,111],[92,96],[107,111]],["2XL",[100,114],[112,116],[97,101],[112,116]],["3XL",[115,129],[117,121],[102,106],[117,121]],["4XL",[130,144],[122,126],[107,111],[122,126]],["5XL",[145,999],[127,999],[112,999],[127,999]]]},
  sm:{nom:"Singlet mujer",cols:["Peso","Pecho","Cintura","Cadera"],u:["kg","cm","cm","cm"],rows:[
   ["2XS",[0,50],[0,82],[0,63],[0,89]],["XS",[51,60],[83,87],[64,70],[90,96]],["S",[61,64],[88,92],[71,74],[97,101]],["M",[65,72],[93,97],[75,80],[102,106]],
   ["L",[73,79],[98,103],[81,87],[107,112]],["XL",[80,88],[104,110],[88,94],[113,118]],["2XL",[89,999],[111,999],[95,999],[119,999]]]},
@@ -242,21 +242,21 @@ function idxRango(rows,col,v){for(var i=0;i<rows.length;i++){var r=rows[i][col+1
   for(var j=0;j<rows.length-1;j++){if(v>rows[j][col+1][1]&&v<rows[j+1][col+1][0])return j}return -1}
 /* Singlet mujer: el talle sale del PESO (relevamiento nov 2026, 22 clientas: el peso es lo que mejor predice; las medidas se mezclan entre XS, S y M por la elasticidad).
    Regla de seguridad: si pecho Y cintura dan un talle más grande que el peso, sube uno (nunca baja). Pecho/cadera muy distintos → sugiere consultar. */
-function calcSM(vals){var T=TALLES.sm,R=T.rows,alt=vals[0],peso=vals[1],pe=vals[2],ci=vals[3],ca=vals[4];
+function calcSinglet(tipo,vals){var mujer=tipo==="sm",T=TALLES[tipo],R=T.rows,alt=vals[0],peso=vals[1],pe=vals[2],ci=vals[3],ca=vals[4];
   var ip=R.length-1;for(var q=0;q<R.length;q++){if(peso<=R[q][1][1]){ip=q;break}}var i=ip,j=-1,
     ipe=idxRango(R,1,pe),ici=idxRango(R,2,ci),ica=idxRango(R,3,ca),det=[];
   det.push("Peso "+String(peso).replace(".",",")+" kg → "+R[ip][0]);
   if(ipe>ip&&ici>ip&&i<R.length-1){i=ip+1;det.push("Por tu pecho ("+String(pe).replace(".",",")+" cm) y cintura ("+String(ci).replace(".",",")+" cm), te conviene un talle más: "+R[i][0])}
   else{/* zona límite: cerca de un corte de peso se muestran los dos talles (±1,5 kg; si mide menos de 1,60 m, hasta 2,5 kg del lado de arriba) */
-    var best=null;for(var k=0;k<R.length-1;k++){var c=(R[k][1][1]+R[k+1][1][0])/2,d=peso-c,lim=d<0?1.5:(alt&&alt<160?2.5:1.5);if(Math.abs(d)<=lim&&(!best||Math.abs(d)<Math.abs(best.d)))best={k:k,d:d}}
+    var best=null;for(var k=0;k<R.length-1;k++){var c=(R[k][1][1]+R[k+1][1][0])/2,d=peso-c,lim=d<0?1.5:(mujer&&alt&&alt<160?2.5:1.5);if(Math.abs(d)<=lim&&(!best||Math.abs(d)<Math.abs(best.d)))best={k:k,d:d}}
     if(best){i=best.k;j=best.k+1;det[0]="Peso "+String(peso).replace(".",",")+" kg → entre "+R[i][0]+" y "+R[j][0]}}
   var dudas=Math.abs(ipe-i)>=3||Math.abs(ica-i)>=3;
   return {talle:R[i][0],alt:j>=0?R[j][0]:"",det:det,dudas:dudas,
     entre:j>=0?"Estás justo entre "+R[i][0]+" y "+R[j][0]+". El "+R[i][0]+" queda más al cuerpo y el "+R[j][0]+", un poco más suelto. Elegí según cómo te guste usarlo.":"",
-    nota:"La tela es elástica y se adapta al cuerpo, por eso nos guiamos principalmente por el peso."+(alt&&alt<160&&j<0?" Si medís menos de 1,60 m, puede quedarte apenas largo de tiro.":"")}}
+    nota:"La tela es elástica y se adapta al cuerpo, por eso nos guiamos principalmente por el peso."+(mujer&&alt&&alt<160&&j<0?" Si medís menos de 1,60 m, puede quedarte apenas largo de tiro.":"")}}
 function calcular(tipo,vals){var T=TALLES[tipo];
-  if(tipo==="sm")return calcSM(vals);
-  if(tipo==="sh"){var det=[],ids=[];T.cols.forEach(function(c,k){var v=vals[k];if(!v)return;var i=idxRango(T.rows,k,v);if(i<0)return;ids.push(i);det.push(c+" "+v+" "+T.u[k]+" → "+T.rows[i][0])});
+  if(tipo==="sm"||tipo==="sh")return calcSinglet(tipo,vals);
+  if(false){var det=[],ids=[];T.cols.forEach(function(c,k){var v=vals[k];if(!v)return;var i=idxRango(T.rows,k,v);if(i<0)return;ids.push(i);det.push(c+" "+v+" "+T.u[k]+" → "+T.rows[i][0])});
     if(!ids.length)return null;var o=ids.slice().sort(function(a,b){return a-b}),m=o[Math.floor((o.length-1)/2)];
     return {talle:T.rows[m][0],det:det,dudas:(o[o.length-1]-o[0])>=2,nota:"El singlet es de alta compresión: si quedás entre dos talles, elegí el más chico."}}
   if(tipo==="rc"||tipo==="ro"){var a=vals[0];if(!a)return null;var best=null,bd=1e9,tie=null;T.ancho.forEach(function(r){var d=Math.abs(r[1]-a);if(d<bd-0.01){bd=d;best=r;tie=null}else if(Math.abs(d-bd)<0.01){tie=r}});
@@ -265,7 +265,7 @@ function calcular(tipo,vals){var T=TALLES[tipo];
   if(tipo==="md"){var c=vals[0];if(!c)return null;var r2=T.calz.filter(function(x){return c>=x[1]&&c<=x[2]})[0]||(c<34?T.calz[0]:T.calz[2]);return {talle:r2[0],det:["Calzás "+c+" → talle "+r2[0]]}}
   return null}
 function campos(tipo){if(tipo==="sm")return [["Altura (cm)","Ej: 160",true],["Peso (kg)","Ej: 62",true],["Contorno de pecho (cm)","Ej: 88",true],["Contorno de cintura (cm)","Ej: 72",true],["Contorno de cadera (cm)","Ej: 98",true]];
-  if(tipo==="sh")return [["Peso (kg)","Ej: 82",true],["Contorno de pecho (cm)","Opcional"],["Contorno de cintura (cm)","Opcional"],["Contorno de cadera (cm)","Opcional"]];
+  if(tipo==="sh")return [["Altura (cm)","Ej: 175",true],["Peso (kg)","Ej: 82",true],["Contorno de pecho (cm)","Ej: 104",true],["Contorno de cintura (cm)","Ej: 88",true],["Contorno de cadera (cm)","Ej: 104",true]];
   if(tipo==="rc"||tipo==="ro")return [["Ancho de una remera que te quede bien (cm)","Medila de axila a axila, apoyada en una mesa",true]];
   if(tipo==="zp")return [["Largo de tu pie (cm)","Ej: 26,5",true]];if(tipo==="md")return [["¿Qué talle de calzado usás? (ARG)","Ej: 41",true]];return []}
 var RECO_ON={sm:true}; /* tipos con el recomendador prendido (sm = singlet mujer). Los demás se prueban con ?reco=1 en la URL */
