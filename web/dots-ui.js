@@ -245,14 +245,14 @@ function idxRango(rows,col,v){for(var i=0;i<rows.length;i++){var r=rows[i][col+1
 function calcSM(vals){var T=TALLES.sm,R=T.rows,alt=vals[0],peso=vals[1],pe=vals[2],ci=vals[3],ca=vals[4];
   var ip=R.length-1;for(var q=0;q<R.length;q++){if(peso<=R[q][1][1]){ip=q;break}}var i=ip,j=-1,
     ipe=idxRango(R,1,pe),ici=idxRango(R,2,ci),ica=idxRango(R,3,ca),det=[];
-  det.push("Peso "+peso+" kg → "+R[ip][0]);
-  if(ipe>ip&&ici>ip&&i<R.length-1){i=ip+1;det.push("Pecho "+pe+" cm y cintura "+ci+" cm → más torso: subimos a "+R[i][0])}
+  det.push("Peso "+String(peso).replace(".",",")+" kg → "+R[ip][0]);
+  if(ipe>ip&&ici>ip&&i<R.length-1){i=ip+1;det.push("Por tu pecho ("+String(pe).replace(".",",")+" cm) y cintura ("+String(ci).replace(".",",")+" cm), te conviene un talle más: "+R[i][0])}
   else{/* zona límite: cerca de un corte de peso se muestran los dos talles (±1,5 kg; si mide menos de 1,60 m, hasta 2,5 kg del lado de arriba) */
     var best=null;for(var k=0;k<R.length-1;k++){var c=(R[k][1][1]+R[k+1][1][0])/2,d=peso-c,lim=d<0?1.5:(alt&&alt<160?2.5:1.5);if(Math.abs(d)<=lim&&(!best||Math.abs(d)<Math.abs(best.d)))best={k:k,d:d}}
     if(best){i=best.k;j=best.k+1}}
   var dudas=Math.abs(ipe-i)>=3||Math.abs(ica-i)>=3;
   return {talle:R[i][0],alt:j>=0?R[j][0]:"",det:det,dudas:dudas,
-    entre:j>=0?"Estás justo entre "+R[i][0]+" y "+R[j][0]+". Si te gusta bien ajustado, elegí "+R[i][0]+"; si lo preferís más cómodo, "+R[j][0]+".":"",
+    entre:j>=0?"Estás justo entre "+R[i][0]+" y "+R[j][0]+". El "+R[i][0]+" queda más al cuerpo y el "+R[j][0]+", un poco más suelto. Elegí según cómo te guste usarlo.":"",
     nota:"La tela es elástica y se adapta al cuerpo, por eso nos guiamos principalmente por el peso."+(alt&&alt<160&&j<0?" Si medís menos de 1,60 m, puede quedarte apenas largo de tiro.":"")}}
 function calcular(tipo,vals){var T=TALLES[tipo];
   if(tipo==="sm")return calcSM(vals);
@@ -281,12 +281,12 @@ function recomendador(){if(!(RECO_ON||/[?&]reco=1/.test(location.search)))return
   function cerrar(){m.classList.remove("on")}a.addEventListener("click",function(e){e.preventDefault();m.classList.add("on");var f=$("input",m);if(f)f.focus()});
   $(".x",m).addEventListener("click",cerrar);m.addEventListener("click",function(e){if(e.target===m)cerrar()});
   $(".dp-qt-go",m).addEventListener("click",function(){var vals=$$("input",m).map(function(i){return parseFloat(String(i.value).replace(",","."))||0});
-    var falta=cs.filter(function(c,k){return c[2]&&!vals[k]})[0];if(falta){res.className="dp-qt-r on";res.innerHTML="Completá "+falta[0].toLowerCase()+" para calcular.";return}
+    var falta=cs.filter(function(c,k){return c[2]&&!vals[k]})[0];if(falta){res.className="dp-qt-r on";res.innerHTML="Completá tu "+falta[0].toLowerCase().replace(/ \(.*\)/,"")+" para calcular.";return}
     var r=calcular(tipo,vals);if(!r){res.className="dp-qt-r on";res.textContent="No pudimos calcularlo, escribinos y te ayudamos.";return}
     var ok=r.alt?null:elegirTalle(r.talle),nm=(($("h1")||{}).textContent||"").trim();
     var wa="https://wa.me/"+WA+"?text="+encodeURIComponent("¡Hola DOTS! Tengo una duda con el talle de: "+nm);
     res.className="dp-qt-r on";res.innerHTML="Te recomendamos<b class=t>"+r.talle+(r.alt?" o "+r.alt:"")+"</b><ul>"+r.det.map(function(d){return "<li>"+d+"</li>"}).join("")+"</ul>"+
-     (r.dudas?'<div class="n"><b>Tus medidas no coinciden mucho con tu peso:</b> escribinos y lo vemos juntos antes de comprar.</div>':"")+(r.nota?'<div class="n">'+r.nota+"</div>":"")+
+     (r.dudas?'<div class="n">Con tus datos podrías andar bien en más de un talle. Escribinos y te ayudamos a elegir el ideal.</div>':"")+(r.nota?'<div class="n">'+r.nota+"</div>":"")+
      (r.entre?'<div class="n" style="color:#0E0E10">'+r.entre+'</div><div style="display:flex;gap:8px;margin-top:10px">'+[r.talle,r.alt].map(function(t){return '<button type="button" class="dp-qt-el" data-t="'+t+'" style="all:unset;cursor:pointer;flex:1;text-align:center;height:40px;line-height:40px;border:1.5px solid #C02E3E;border-radius:6px;font:700 13px Inter,system-ui,sans-serif;color:#C02E3E">Elegir '+t+'</button>'}).join("")+'</div>':(ok?'<div class="n">✓ Ya lo seleccionamos en la página.</div>':'<div class="n">Ese talle no está disponible en este producto.</div>'))+
      '<div class="n" style="font-size:11.5px">Es una sugerencia según tus datos. Ante la duda, escribinos antes de comprar.</div>'+
      '<a class="w" target="_blank" rel="noopener" href="'+wa+'">¿Dudas? Escribinos por WhatsApp →</a>';$$(".dp-qt-el",res).forEach(function(bt){bt.addEventListener("click",function(){var t=bt.getAttribute("data-t");var y=elegirTalle(t);$$(".dp-qt-el",res).forEach(function(x){x.style.background="";x.style.color="#C02E3E"});bt.style.background="#C02E3E";bt.style.color="#fff";if(!y)bt.textContent=t+" no disponible"})});try{res.scrollIntoView({behavior:"smooth",block:"nearest"})}catch(e){}})}
