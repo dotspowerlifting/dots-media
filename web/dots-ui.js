@@ -131,12 +131,49 @@ function wa(){if($(".pxd-glo")||/^\/(comprar|checkout)/.test(location.pathname))
   var x=$(".pxd-glo-x",g);if(x)x.addEventListener("click",function(){g.classList.remove("on");try{sessionStorage.setItem("dots-wa-x","1")}catch(e){}setTimeout(function(){g.remove()},400)});
   setTimeout(function(){g.classList.add("on")},6000)}
 
+
+/* ---------- Editor: "Cambiar video" (solo dentro de Editar diseño) ---------- */
+var SUBIDAS="https://dots-subidas.dotspowerlifting.workers.dev/";
+function enEditor(){var inF=false;try{inF=window.self!==window.top}catch(e){inF=true}return inF&&/[?&]preview=true/.test(location.search)}
+function rutaGH(u){u=u||"";var i=u.indexOf("/dots-media/main/");if(i<0){i=u.indexOf("/dots-media@");if(i<0)return "";u=u.slice(i+12);var s=u.indexOf("/");return s<0?"":u.slice(s+1)}return u.slice(i+17).split("?")[0]}
+function b64(blob){return new Promise(function(ok,ko){var r=new FileReader();r.onload=function(){ok(String(r.result).split(",")[1])};r.onerror=ko;r.readAsDataURL(blob)})}
+function shaDe(path){return fetch("https://api.github.com/repos/dotspowerlifting/dots-media/contents/"+path+"?ref=main",{headers:{Accept:"application/vnd.github.object"}}).then(function(r){return r.ok?r.json():{}}).then(function(j){return j.sha||null}).catch(function(){return null})}
+function subir(path,blob,clave){return Promise.all([b64(blob),shaDe(path)]).then(function(x){var body={message:"Editor: "+path+" actualizado",content:x[0],branch:"main"};if(x[1])body.sha=x[1];
+  return fetch(SUBIDAS+"?path="+encodeURIComponent(path),{method:"PUT",headers:{"content-type":"application/json","x-dots-clave":clave},body:JSON.stringify(body)}).then(function(r){return r.text().then(function(t){if(!r.ok)throw new Error(t||("Error "+r.status));return t})})})}
+function portada(file){return new Promise(function(ok){var v=document.createElement("video");v.muted=true;v.playsInline=true;v.preload="auto";v.src=URL.createObjectURL(file);
+  v.addEventListener("loadeddata",function(){try{v.currentTime=Math.min(0.5,(v.duration||1)/2)}catch(e){ok(null)}});
+  v.addEventListener("seeked",function(){try{var w=Math.min(1080,v.videoWidth||720),h=Math.round(w*(v.videoHeight||1280)/(v.videoWidth||720));var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(v,0,0,w,h);c.toBlob(function(b){ok(b)},"image/jpeg",0.82)}catch(e){ok(null)}});
+  v.addEventListener("error",function(){ok(null)});setTimeout(function(){ok(null)},15000)})}
+function pedirClave(){var c="";try{c=localStorage.getItem("dots-clave")||""}catch(e){}
+  if(!c)c=prompt("Contraseña para subir videos de DOTS:")||"";if(!c)return Promise.reject(new Error("Sin contraseña"));
+  return fetch(SUBIDAS+"?check=1",{headers:{"x-dots-clave":c}}).then(function(r){if(!r.ok){try{localStorage.removeItem("dots-clave")}catch(e){}throw new Error("Contraseña incorrecta")}try{localStorage.setItem("dots-clave",c)}catch(e){}return c})}
+function editor(){if(!enEditor()||SUBIDAS.indexOf("__")===0||$("#dots-ed-css"))return;
+  var st=document.createElement("style");st.id="dots-ed-css";st.textContent=".dots-ed{position:absolute;z-index:20;top:10px;right:10px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;pointer-events:auto}.dots-ed button{all:unset;cursor:pointer;background:#C02E3E;color:#fff;font:700 12px/1 Inter,system-ui,sans-serif;padding:9px 12px;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.35)}.dots-ed span{background:rgba(14,14,16,.85);color:#fff;font:600 11px/1.3 Inter,system-ui,sans-serif;padding:6px 8px;border-radius:6px;max-width:220px;text-align:right}.pxd-vc-t{animation-play-state:paused!important}.pxd-vc{overflow-x:auto!important}.pxd-vt figcaption{pointer-events:none}";
+  document.head.appendChild(st);
+  $$("video").forEach(function(v){var path=rutaGH(v.getAttribute("src")||v.getAttribute("data-dpsrc")||"");if(!path||!/\.mp4$/.test(path))return;
+    var fig=v.closest("figure");if(fig&&fig.getAttribute("aria-hidden")==="true")return;
+    var box=v.parentElement;if(getComputedStyle(box).position==="static")box.style.position="relative";
+    var w=document.createElement("div");w.className="dots-ed";w.innerHTML='<button type="button">🎬 Cambiar video</button><span style="display:none"></span>';box.appendChild(w);
+    var bt=$("button",w),msg=$("span",w);function info(t){msg.style.display=t?"":"none";msg.textContent=t}
+    bt.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();var inp=document.createElement("input");inp.type="file";inp.accept="video/mp4";
+      inp.onchange=function(){var f=inp.files[0];if(!f)return;var mb=f.size/1048576;
+        if(mb>40){info("El video pesa "+mb.toFixed(1)+" MB. El máximo es 40 MB: comprimilo y probá de nuevo.");return}
+        if(mb>10&&!confirm("El video pesa "+mb.toFixed(1)+" MB. Videos de más de 10 MB hacen más lenta la web, sobre todo en celular. ¿Subirlo igual?"))return;
+        var clave;bt.style.opacity=".6";
+        pedirClave().then(function(c){clave=c;info("Subiendo video… no cierres esta pantalla");return subir(path,f,clave)})
+        .then(function(){info("Generando imagen de portada…");return portada(f)})
+        .then(function(img){var pp=rutaGH(v.getAttribute("poster")||"")||path.replace(/\.mp4$/,".jpg");return img?subir(pp,img,clave):null})
+        .then(function(){var u=URL.createObjectURL(f);v.src=u;v.removeAttribute("data-dpsrc");try{v.load();v.play()}catch(e){}info("✓ Listo. En la web pública se ve en unos 5 minutos.")})
+        .catch(function(er){info("No se pudo subir: "+er.message)}).then(function(){bt.style.opacity=""})};
+      inp.click()})
+  })}
+
 /* ---------- Animación de aparición al bajar ---------- */
 function reveal(){if(!("IntersectionObserver" in window))return;
   var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}})},{rootMargin:"0px 0px -8% 0px"});
   $$(".pxd-rv").forEach(function(el){if(el.getBoundingClientRect().top>window.innerHeight){el.classList.remove("in");io.observe(el)}})}
 
-function run(){home();cards();pdp();wa();reveal();
+function run(){home();cards();pdp();wa();reveal();try{editor()}catch(e){}
   new MutationObserver(function(ms){var add=false;ms.forEach(function(m){if(m.addedNodes.length)add=true});if(add){cards();if(document.body.classList.contains("template-product"))rel()}}).observe(document.body,{childList:true,subtree:true})}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",run);else run();
 })();
