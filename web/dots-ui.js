@@ -107,7 +107,7 @@ function pdp(){if(!document.body.classList.contains("template-product"))return;
   if(form&&!$(".px-epb",form)){var t2=tpl("dots-tpl-epb");if(t2){var eb=t2.firstElementChild,h=$("h1"),nm=h?h.textContent.trim():"";
     var w=$(".px-ep-wsp",eb);if(w)w.href="https://wa.me/"+WA+"?text="+encodeURIComponent("¡Hola DOTS! Quería consultar por este producto:\n"+nm.toUpperCase());
     var ref=$(".dp-safe-wrap",form)||$(".row.no-gutters.mb-4",form);if(ref)ref.parentNode.insertBefore(eb,ref.nextSibling);else form.appendChild(eb)}}
-  thumbs();rel();
+  thumbs();rel();try{recomendador()}catch(e){}
 }
 function thumbs(){var sw=$(".js-swiper-product");if(!sw||$(".px-fc-th"))return;
   var sl=$$(".js-product-slide",sw).filter(function(s){return !s.classList.contains("swiper-slide-duplicate")});if(sl.length<2)return;
@@ -203,6 +203,65 @@ function botonFoto(box,clave,alCambiar){if(getComputedStyle(box).position==="sta
     inp.click()})}
 function editorFotos(){$$(".pxd-cat").forEach(function(a){var f=$(".pxd-cat-f",a),img=$("img",a);if(!f||!img)return;botonFoto(f,"cat-"+slugCat(a),function(u){img.src=u})});
   var d=$("#destacados"),fo=d&&$(".pxd-fondo",d);if(d&&fo){botonFoto(d,"fondo-destacados",function(u){fo.style.backgroundImage='url("'+u+'")'})}}
+
+
+/* ---------- Recomendador de talles ("¿Qué talle soy?") ---------- */
+var TALLES={
+ sh:{nom:"Singlet hombre",cols:["Peso","Pecho","Cintura","Cadera"],u:["kg","cm","cm","cm"],rows:[
+  ["XS",[0,49],[86,91],[71,76],[86,91]],["S",[50,60],[91,96],[76,81],[91,96]],["M",[60,70],[96,101],[81,86],[96,101]],["L",[70,85],[101,106],[86,91],[101,106]],
+  ["XL",[85,100],[106,111],[91,96],[106,111]],["2XL",[100,115],[111,116],[96,101],[111,116]],["3XL",[115,130],[116,121],[101,106],[116,121]],["4XL",[130,145],[121,126],[106,111],[121,126]],["5XL",[145,999],[126,131],[111,116],[126,131]]]},
+ sm:{nom:"Singlet mujer",cols:["Peso","Pecho","Cintura","Cadera"],u:["kg","cm","cm","cm"],rows:[
+  ["2XS",[0,45],[78,82],[58,62],[84,88]],["XS",[46,53],[83,87],[63,67],[89,93]],["S",[54,62],[88,94],[68,74],[94,100]],["M",[63,70],[95,101],[75,81],[101,107]],
+  ["L",[71,78],[102,108],[82,88],[108,114]],["XL",[79,87],[109,115],[89,95],[115,121]],["2XL",[88,999],[116,999],[96,999],[122,999]]]},
+ rc:{nom:"Remera de competencia",ancho:[["XS",48],["S",50],["M",52],["L",54],["XL",56],["2XL",58],["3XL",60]]},
+ ro:{nom:"Remera / musculosa oversize",ancho:[["S",56],["M",58],["L",60],["XL",63],["2XL",65]]},
+ zp:{nom:"Zapatillas",pie:[["35",24.5],["36",25],["37",25.5],["38",26],["39",26.5],["40",27],["41",27.5],["42",28],["43",28.5],["44",29],["45",29.5],["46",30]]},
+ md:{nom:"Medias",calz:[["S",34,38],["M",39,42],["L",43,99]]}};
+function tipoTalle(){var h=($("h1")||{}).textContent||"",b=($(".breadcrumbs")||{}).textContent||"";h=h.toUpperCase();b=b.toUpperCase();
+  if(/SINGLET/.test(h)||/SINGLETS/.test(b))return /MUJER/.test(h)?"sm":"sh";
+  if(/REMERA DE COMPETENCIA/.test(h))return "rc";
+  if(/OVERSIZE|ENTRENAMIENTO|SUDADERA|MUSCULOSA/.test(h))return "ro";
+  if(/ZAPATILLA|DOTS BASE/.test(h)||/ZAPATILLAS/.test(b))return "zp";
+  if(/MEDIAS/.test(h)||/MEDIAS/.test(b))return "md";return ""}
+function normT(t){return String(t).toUpperCase().replace(/\s+/g,"").replace(/^XXL$/,"2XL").replace(/^XXXL$/,"3XL")}
+function grupoTalle(){return $$(".js-product-variants-group").filter(function(g){return /talle/i.test(g.textContent)})[0]||$(".js-product-variants-group")}
+function elegirTalle(t){var g=grupoTalle();if(!g)return false;var b=$$(".js-insta-variant",g).filter(function(x){return normT(x.getAttribute("data-option"))===normT(t)})[0];
+  if(b){b.click();return true}var sel=$("select",g);if(sel){var o=$$("option",sel).filter(function(x){return normT(x.value)===normT(t)})[0];if(o){sel.value=o.value;sel.dispatchEvent(new Event("change",{bubbles:true}));return true}}return false}
+function idxRango(rows,col,v){for(var i=0;i<rows.length;i++){var r=rows[i][col+1];if(v>=r[0]&&v<=r[1])return i}
+  if(v<rows[0][col+1][0])return 0;if(v>rows[rows.length-1][col+1][1])return rows.length-1;
+  for(var j=0;j<rows.length-1;j++){if(v>rows[j][col+1][1]&&v<rows[j+1][col+1][0])return j}return -1}
+function calcular(tipo,vals){var T=TALLES[tipo];
+  if(tipo==="sh"||tipo==="sm"){var det=[],ids=[];T.cols.forEach(function(c,k){var v=vals[k];if(!v)return;var i=idxRango(T.rows,k,v);if(i<0)return;ids.push(i);det.push(c+" "+v+" "+T.u[k]+" → "+T.rows[i][0])});
+    if(!ids.length)return null;var o=ids.slice().sort(function(a,b){return a-b}),m=o[Math.floor((o.length-1)/2)];
+    return {talle:T.rows[m][0],det:det,dudas:(o[o.length-1]-o[0])>=2,nota:"El singlet es de alta compresión: si quedás entre dos talles, elegí el más chico."}}
+  if(tipo==="rc"||tipo==="ro"){var a=vals[0];if(!a)return null;var best=null,bd=1e9,tie=null;T.ancho.forEach(function(r){var d=Math.abs(r[1]-a);if(d<bd-0.01){bd=d;best=r;tie=null}else if(Math.abs(d-bd)<0.01){tie=r}});
+    return {talle:best[0],alt:tie&&tie[0],det:["Tu remera mide "+a+" cm de ancho → la más parecida es "+best[0]+" ("+best[1]+" cm)"+(tie?" o "+tie[0]+" ("+tie[1]+" cm)":"")]}}
+  if(tipo==="zp"){var p=vals[0];if(!p)return null;var r=T.pie.filter(function(x){return x[1]>=p})[0]||T.pie[T.pie.length-1];return {talle:r[0],det:["Pie de "+p+" cm → talle "+r[0]+" ARG ("+r[1]+" cm)"],nota:"Medí tu pie apoyado en el piso, del talón a la punta del dedo más largo."}}
+  if(tipo==="md"){var c=vals[0];if(!c)return null;var r2=T.calz.filter(function(x){return c>=x[1]&&c<=x[2]})[0]||(c<34?T.calz[0]:T.calz[2]);return {talle:r2[0],det:["Calzás "+c+" → talle "+r2[0]]}}
+  return null}
+function campos(tipo){if(tipo==="sh"||tipo==="sm")return [["Peso (kg)","Ej: 82",true],["Contorno de pecho (cm)","Opcional"],["Contorno de cintura (cm)","Opcional"],["Contorno de cadera (cm)","Opcional"]];
+  if(tipo==="rc"||tipo==="ro")return [["Ancho de una remera que te quede bien (cm)","Medila de axila a axila, apoyada en una mesa",true]];
+  if(tipo==="zp")return [["Largo de tu pie (cm)","Ej: 26,5",true]];if(tipo==="md")return [["¿Qué talle de calzado usás? (ARG)","Ej: 41",true]];return []}
+function recomendador(){if(!document.body.classList.contains("template-product")||$(".dp-qt"))return;var tipo=tipoTalle();if(!tipo)return;var g=grupoTalle();if(!g)return;
+  var st=document.createElement("style");st.textContent=".dp-qt-a{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font:700 12px/1 Inter,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#C02E3E;border-bottom:1.5px solid #C02E3E;padding-bottom:3px;margin:6px 0 10px}.dp-qt{position:fixed;inset:0;z-index:100000;background:rgba(14,14,16,.6);display:none;align-items:center;justify-content:center;padding:16px}.dp-qt.on{display:flex}.dp-qt-c{background:#fff;color:#0E0E10;border-radius:14px;max-width:420px;width:100%;max-height:90vh;overflow:auto;padding:24px 22px;font-family:Inter,system-ui,sans-serif;position:relative}.dp-qt-c h3{font:800 22px/1.1 Archivo,'Arial Black',system-ui,sans-serif!important;margin:0 0 4px!important;text-transform:none!important}.dp-qt-c p.s{color:#6B6B73;font-size:13.5px;margin:0 0 16px}.dp-qt-c label{display:block;font:600 13px/1.3 Inter,system-ui,sans-serif;margin:10px 0 5px}.dp-qt-c input{width:100%;box-sizing:border-box;height:44px;border:1px solid #D4D4D8;border-radius:8px;padding:0 12px;font-size:16px}.dp-qt-c .x{position:absolute;top:10px;right:12px;all:unset;cursor:pointer;font-size:22px;line-height:1;color:#6B6B73;position:absolute;top:12px;right:14px}.dp-qt-go{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;text-align:center;height:48px;line-height:48px;margin-top:16px;border-radius:6px;background:#C02E3E;color:#fff;font:700 13px/48px Inter,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase}.dp-qt-r{margin-top:18px;background:#F4F4F5;border-radius:10px;padding:16px;display:none}.dp-qt-r.on{display:block}.dp-qt-r b.t{display:block;font:800 30px/1 Archivo,'Arial Black',system-ui,sans-serif;color:#C02E3E;margin:4px 0 8px}.dp-qt-r ul{margin:0;padding-left:18px;font-size:13px;color:#3F3F46}.dp-qt-r .n{font-size:12.5px;color:#6B6B73;margin-top:8px}.dp-qt-r .w{display:inline-block;margin-top:10px;font-size:13px;font-weight:700;color:#1E9E52!important;text-decoration:none!important}";document.head.appendChild(st);
+  var a=document.createElement("button");a.type="button";a.className="dp-qt-a";a.textContent="¿Qué talle soy?";
+  var tg=$(".dp-tg-link",g);if(tg&&tg.parentNode)tg.parentNode.parentNode.insertBefore(a,tg.parentNode.nextSibling);else g.insertBefore(a,g.firstChild);
+  var cs=campos(tipo),m=document.createElement("div");m.className="dp-qt";
+  m.innerHTML='<div class="dp-qt-c" role="dialog" aria-label="Recomendador de talle"><button type="button" class="x" aria-label="Cerrar">×</button><h3>¿Qué talle soy?</h3><p class="s">'+TALLES[tipo].nom+'. Completá tus datos y te sugerimos el talle.</p>'+
+   cs.map(function(c,i){return '<label for="dpq'+i+'">'+c[0]+(c[2]?"":"")+'</label><input id="dpq'+i+'" type="number" inputmode="decimal" step="0.5" min="0" placeholder="'+c[1]+'">'}).join("")+
+   '<button type="button" class="dp-qt-go">Ver mi talle</button><div class="dp-qt-r"></div></div>';
+  document.body.appendChild(m);var res=$(".dp-qt-r",m);
+  function cerrar(){m.classList.remove("on")}a.addEventListener("click",function(e){e.preventDefault();m.classList.add("on");var f=$("input",m);if(f)f.focus()});
+  $(".x",m).addEventListener("click",cerrar);m.addEventListener("click",function(e){if(e.target===m)cerrar()});
+  $(".dp-qt-go",m).addEventListener("click",function(){var vals=$$("input",m).map(function(i){return parseFloat(String(i.value).replace(",","."))||0});
+    if(!vals[0]){res.className="dp-qt-r on";res.innerHTML="Completá "+cs[0][0].toLowerCase()+" para calcular.";return}
+    var r=calcular(tipo,vals);if(!r){res.className="dp-qt-r on";res.textContent="No pudimos calcularlo, escribinos y te ayudamos.";return}
+    var ok=elegirTalle(r.talle),nm=(($("h1")||{}).textContent||"").trim();
+    var wa="https://wa.me/"+WA+"?text="+encodeURIComponent("¡Hola DOTS! Tengo una duda con el talle de: "+nm);
+    res.className="dp-qt-r on";res.innerHTML="Te recomendamos<b class=t>"+r.talle+(r.alt?" o "+r.alt:"")+"</b><ul>"+r.det.map(function(d){return "<li>"+d+"</li>"}).join("")+"</ul>"+
+     (r.dudas?'<div class="n">Tus medidas caen en talles bastante distintos: escribinos y lo vemos juntos.</div>':"")+(r.nota?'<div class="n">'+r.nota+"</div>":"")+
+     (ok?'<div class="n">✓ Ya lo seleccionamos en la página.</div>':'<div class="n">Ese talle no está disponible en este producto.</div>')+
+     '<a class="w" target="_blank" rel="noopener" href="'+wa+'">¿Dudas? Escribinos por WhatsApp →</a>'})}
 
 /* ---------- Animación de aparición al bajar ---------- */
 function reveal(){if(!("IntersectionObserver" in window))return;
