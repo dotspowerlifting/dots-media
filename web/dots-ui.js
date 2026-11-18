@@ -221,8 +221,8 @@ var TALLES={
   ["XS",[0,49],[86,91],[71,76],[86,91]],["S",[50,60],[91,96],[76,81],[91,96]],["M",[60,70],[96,101],[81,86],[96,101]],["L",[70,85],[101,106],[86,91],[101,106]],
   ["XL",[85,100],[106,111],[91,96],[106,111]],["2XL",[100,115],[111,116],[96,101],[111,116]],["3XL",[115,130],[116,121],[101,106],[116,121]],["4XL",[130,145],[121,126],[106,111],[121,126]],["5XL",[145,999],[126,131],[111,116],[126,131]]]},
  sm:{nom:"Singlet mujer",cols:["Peso","Pecho","Cintura","Cadera"],u:["kg","cm","cm","cm"],rows:[
-  ["2XS",[0,45],[78,82],[58,62],[84,88]],["XS",[46,53],[83,87],[63,67],[89,93]],["S",[54,62],[88,94],[68,74],[94,100]],["M",[63,70],[95,101],[75,81],[101,107]],
-  ["L",[71,78],[102,108],[82,88],[108,114]],["XL",[79,87],[109,115],[89,95],[115,121]],["2XL",[88,999],[116,999],[96,999],[122,999]]]},
+  ["2XS",[0,50],[0,82],[0,63],[0,89]],["XS",[51,60],[83,87],[64,70],[90,96]],["S",[61,64],[88,92],[71,74],[97,101]],["M",[65,72],[93,97],[75,80],[102,106]],
+  ["L",[73,79],[98,103],[81,87],[107,112]],["XL",[80,88],[104,110],[88,94],[113,118]],["2XL",[89,999],[111,999],[95,999],[119,999]]]},
  rc:{nom:"Remera de competencia",ancho:[["XS",44],["S",46],["M",48],["L",50],["XL",55],["2XL",59],["3XL",63]]},
  ro:{nom:"Remera / musculosa oversize",ancho:[["S",56],["M",58],["L",60],["XL",63],["2XL",65]]},
  zp:{nom:"Zapatillas",pie:[["35",24.5],["36",25],["37",25.5],["38",26],["39",26.5],["40",27],["41",27.5],["42",28],["43",28.5],["44",29],["45",29.5],["46",30]]},
@@ -240,8 +240,17 @@ function elegirTalle(t){var g=grupoTalle();if(!g)return false;var b=$$(".js-inst
 function idxRango(rows,col,v){for(var i=0;i<rows.length;i++){var r=rows[i][col+1];if(v>=r[0]&&v<=r[1])return i}
   if(v<rows[0][col+1][0])return 0;if(v>rows[rows.length-1][col+1][1])return rows.length-1;
   for(var j=0;j<rows.length-1;j++){if(v>rows[j][col+1][1]&&v<rows[j+1][col+1][0])return j}return -1}
+/* Singlet mujer: el talle sale del PESO (relevamiento nov 2026, 22 clientas: el peso es lo que mejor predice; las medidas se mezclan entre XS, S y M por la elasticidad).
+   Regla de seguridad: si pecho Y cintura dan un talle más grande que el peso, sube uno (nunca baja). Pecho/cadera muy distintos → sugiere consultar. */
+function calcSM(vals){var T=TALLES.sm,R=T.rows,alt=vals[0],peso=vals[1],pe=vals[2],ci=vals[3],ca=vals[4];
+  var ip=R.length-1;for(var q=0;q<R.length;q++){if(peso<=R[q][1][1]){ip=q;break}}var i=ip,ipe=idxRango(R,1,pe),ici=idxRango(R,2,ci),ica=idxRango(R,3,ca),det=[];
+  det.push("Peso "+peso+" kg → "+R[ip][0]);
+  if(ipe>ip&&ici>ip&&i<R.length-1){i=ip+1;det.push("Pecho "+pe+" cm y cintura "+ci+" cm → más torso: subimos a "+R[i][0])}
+  var dudas=Math.abs(ipe-i)>=3||Math.abs(ica-i)>=3;
+  return {talle:R[i][0],det:det,dudas:dudas,nota:"La tela es elástica y se adapta al cuerpo, por eso nos guiamos principalmente por el peso."+(alt&&alt<160?" Si medís menos de 1,60 m, puede quedarte apenas largo de tiro.":"")}}
 function calcular(tipo,vals){var T=TALLES[tipo];
-  if(tipo==="sh"||tipo==="sm"){var det=[],ids=[];T.cols.forEach(function(c,k){var v=vals[k];if(!v)return;var i=idxRango(T.rows,k,v);if(i<0)return;ids.push(i);det.push(c+" "+v+" "+T.u[k]+" → "+T.rows[i][0])});
+  if(tipo==="sm")return calcSM(vals);
+  if(tipo==="sh"){var det=[],ids=[];T.cols.forEach(function(c,k){var v=vals[k];if(!v)return;var i=idxRango(T.rows,k,v);if(i<0)return;ids.push(i);det.push(c+" "+v+" "+T.u[k]+" → "+T.rows[i][0])});
     if(!ids.length)return null;var o=ids.slice().sort(function(a,b){return a-b}),m=o[Math.floor((o.length-1)/2)];
     return {talle:T.rows[m][0],det:det,dudas:(o[o.length-1]-o[0])>=2,nota:"El singlet es de alta compresión: si quedás entre dos talles, elegí el más chico."}}
   if(tipo==="rc"||tipo==="ro"){var a=vals[0];if(!a)return null;var best=null,bd=1e9,tie=null;T.ancho.forEach(function(r){var d=Math.abs(r[1]-a);if(d<bd-0.01){bd=d;best=r;tie=null}else if(Math.abs(d-bd)<0.01){tie=r}});
@@ -249,7 +258,8 @@ function calcular(tipo,vals){var T=TALLES[tipo];
   if(tipo==="zp"){var p=vals[0];if(!p)return null;var r=T.pie.filter(function(x){return x[1]>=p})[0]||T.pie[T.pie.length-1];return {talle:r[0],det:["Pie de "+p+" cm → talle "+r[0]+" ARG ("+r[1]+" cm)"],nota:"Medí tu pie apoyado en el piso, del talón a la punta del dedo más largo."}}
   if(tipo==="md"){var c=vals[0];if(!c)return null;var r2=T.calz.filter(function(x){return c>=x[1]&&c<=x[2]})[0]||(c<34?T.calz[0]:T.calz[2]);return {talle:r2[0],det:["Calzás "+c+" → talle "+r2[0]]}}
   return null}
-function campos(tipo){if(tipo==="sh"||tipo==="sm")return [["Peso (kg)","Ej: 82",true],["Contorno de pecho (cm)","Opcional"],["Contorno de cintura (cm)","Opcional"],["Contorno de cadera (cm)","Opcional"]];
+function campos(tipo){if(tipo==="sm")return [["Altura (cm)","Ej: 160",true],["Peso (kg)","Ej: 62",true],["Contorno de pecho (cm)","Ej: 88",true],["Contorno de cintura (cm)","Ej: 72",true],["Contorno de cadera (cm)","Ej: 98",true]];
+  if(tipo==="sh")return [["Peso (kg)","Ej: 82",true],["Contorno de pecho (cm)","Opcional"],["Contorno de cintura (cm)","Opcional"],["Contorno de cadera (cm)","Opcional"]];
   if(tipo==="rc"||tipo==="ro")return [["Ancho de una remera que te quede bien (cm)","Medila de axila a axila, apoyada en una mesa",true]];
   if(tipo==="zp")return [["Largo de tu pie (cm)","Ej: 26,5",true]];if(tipo==="md")return [["¿Qué talle de calzado usás? (ARG)","Ej: 41",true]];return []}
 var RECO_ON=false; /* recomendador apagado hasta confirmar las tablas; para probar: agregar ?reco=1 a la URL */
@@ -265,12 +275,12 @@ function recomendador(){if(!(RECO_ON||/[?&]reco=1/.test(location.search)))return
   function cerrar(){m.classList.remove("on")}a.addEventListener("click",function(e){e.preventDefault();m.classList.add("on");var f=$("input",m);if(f)f.focus()});
   $(".x",m).addEventListener("click",cerrar);m.addEventListener("click",function(e){if(e.target===m)cerrar()});
   $(".dp-qt-go",m).addEventListener("click",function(){var vals=$$("input",m).map(function(i){return parseFloat(String(i.value).replace(",","."))||0});
-    if(!vals[0]){res.className="dp-qt-r on";res.innerHTML="Completá "+cs[0][0].toLowerCase()+" para calcular.";return}
+    var falta=cs.filter(function(c,k){return c[2]&&!vals[k]})[0];if(falta){res.className="dp-qt-r on";res.innerHTML="Completá "+falta[0].toLowerCase()+" para calcular.";return}
     var r=calcular(tipo,vals);if(!r){res.className="dp-qt-r on";res.textContent="No pudimos calcularlo, escribinos y te ayudamos.";return}
     var ok=elegirTalle(r.talle),nm=(($("h1")||{}).textContent||"").trim();
     var wa="https://wa.me/"+WA+"?text="+encodeURIComponent("¡Hola DOTS! Tengo una duda con el talle de: "+nm);
     res.className="dp-qt-r on";res.innerHTML="Te recomendamos<b class=t>"+r.talle+(r.alt?" o "+r.alt:"")+"</b><ul>"+r.det.map(function(d){return "<li>"+d+"</li>"}).join("")+"</ul>"+
-     (r.dudas?'<div class="n">Tus medidas caen en talles bastante distintos: escribinos y lo vemos juntos.</div>':"")+(r.nota?'<div class="n">'+r.nota+"</div>":"")+
+     (r.dudas?'<div class="n"><b>Tus medidas no coinciden mucho con tu peso:</b> escribinos y lo vemos juntos antes de comprar.</div>':"")+(r.nota?'<div class="n">'+r.nota+"</div>":"")+
      (ok?'<div class="n">✓ Ya lo seleccionamos en la página.</div>':'<div class="n">Ese talle no está disponible en este producto.</div>')+
      '<a class="w" target="_blank" rel="noopener" href="'+wa+'">¿Dudas? Escribinos por WhatsApp →</a>';try{res.scrollIntoView({behavior:"smooth",block:"nearest"})}catch(e){}})}
 
