@@ -261,7 +261,7 @@ function recomendador(){if(!document.body.classList.contains("template-product")
     res.className="dp-qt-r on";res.innerHTML="Te recomendamos<b class=t>"+r.talle+(r.alt?" o "+r.alt:"")+"</b><ul>"+r.det.map(function(d){return "<li>"+d+"</li>"}).join("")+"</ul>"+
      (r.dudas?'<div class="n">Tus medidas caen en talles bastante distintos: escribinos y lo vemos juntos.</div>':"")+(r.nota?'<div class="n">'+r.nota+"</div>":"")+
      (ok?'<div class="n">✓ Ya lo seleccionamos en la página.</div>':'<div class="n">Ese talle no está disponible en este producto.</div>')+
-     '<a class="w" target="_blank" rel="noopener" href="'+wa+'">¿Dudas? Escribinos por WhatsApp →</a>'})}
+     '<a class="w" target="_blank" rel="noopener" href="'+wa+'">¿Dudas? Escribinos por WhatsApp →</a>';try{res.scrollIntoView({behavior:"smooth",block:"nearest"})}catch(e){}})}
 
 /* ---------- Animación de aparición al bajar ---------- */
 function reveal(){if(!("IntersectionObserver" in window))return;
