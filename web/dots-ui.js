@@ -249,7 +249,7 @@ function calcSM(vals){var T=TALLES.sm,R=T.rows,alt=vals[0],peso=vals[1],pe=vals[
   if(ipe>ip&&ici>ip&&i<R.length-1){i=ip+1;det.push("Por tu pecho ("+String(pe).replace(".",",")+" cm) y cintura ("+String(ci).replace(".",",")+" cm), te conviene un talle más: "+R[i][0])}
   else{/* zona límite: cerca de un corte de peso se muestran los dos talles (±1,5 kg; si mide menos de 1,60 m, hasta 2,5 kg del lado de arriba) */
     var best=null;for(var k=0;k<R.length-1;k++){var c=(R[k][1][1]+R[k+1][1][0])/2,d=peso-c,lim=d<0?1.5:(alt&&alt<160?2.5:1.5);if(Math.abs(d)<=lim&&(!best||Math.abs(d)<Math.abs(best.d)))best={k:k,d:d}}
-    if(best){i=best.k;j=best.k+1}}
+    if(best){i=best.k;j=best.k+1;det[0]="Peso "+String(peso).replace(".",",")+" kg → entre "+R[i][0]+" y "+R[j][0]}}
   var dudas=Math.abs(ipe-i)>=3||Math.abs(ica-i)>=3;
   return {talle:R[i][0],alt:j>=0?R[j][0]:"",det:det,dudas:dudas,
     entre:j>=0?"Estás justo entre "+R[i][0]+" y "+R[j][0]+". El "+R[i][0]+" queda más al cuerpo y el "+R[j][0]+", un poco más suelto. Elegí según cómo te guste usarlo.":"",
