@@ -62,10 +62,13 @@ function cats(){var c=$(".pxd-cats"),i=$(".pxd-cat-bar i");if(!c||!i)return;
 function faq(){$$(".pxd-qb").forEach(function(b){b.addEventListener("click",function(){var q=b.parentNode,open=!q.classList.contains("on");
   $$(".pxd-q.on").forEach(function(o){o.classList.remove("on");var ob=$(".pxd-qb",o);if(ob)ob.setAttribute("aria-expanded","false")});
   if(open){q.classList.add("on");b.setAttribute("aria-expanded","true")}})})}
-function tsts(){var vc=$(".pxd-vc");if(!vc)return;var vs=$$("video",vc);
-  function play(){vs.forEach(function(v){var p=v.play();if(p&&p.catch)p.catch(function(){})})}
-  if(!("IntersectionObserver" in window)){play();return}
-  new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){setTimeout(play,150)}else{vs.forEach(function(v){v.pause()})}})},{rootMargin:"100px 0px"}).observe(vc)}
+function tsts(){var vc=$(".pxd-vc");if(!vc)return;var vs=$$("video",vc),vis=false;
+  function p1(v){if(!vis)return;var p=v.play();if(p&&p.catch)p.catch(function(){})}
+  vs.forEach(function(v){v.muted=true;v.autoplay=true;v.loop=true;v.setAttribute("playsinline","");
+    ["canplay","loadeddata"].forEach(function(ev){v.addEventListener(ev,function(){p1(v)})})});
+  function play(){vs.forEach(p1)}
+  if(!("IntersectionObserver" in window)){vis=true;play();return}
+  new IntersectionObserver(function(es){es.forEach(function(e){vis=e.isIntersecting;if(vis){setTimeout(play,150)}else{vs.forEach(function(v){v.pause()})}})},{rootMargin:"100px 0px"}).observe(vc)}
 
 /* ---------- Tarjetas de producto ---------- */
 function card(it){if(it.getAttribute("data-dots-c"))return;
