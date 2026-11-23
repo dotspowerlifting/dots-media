@@ -1,0 +1,54 @@
+<!-- DOTS · CAMPOS SINGLET PERSONALIZADO (inicio) -->
+<style>
+.dpz{margin:18px 0 16px;border:1px solid #e3e3e3;border-top:3px solid #b4193a;border-radius:4px;padding:16px 16px 14px;background:#fff;text-align:left}
+.dpz-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.dpz-label{font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#111}
+.dpz-opt{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8c8c8c}
+.dpz-l{display:block;font-size:13px;font-weight:700;margin:12px 0 5px;color:#111}.dpz-l i{font-style:normal;font-weight:400;color:#8c8c8c}
+.dpz-f{position:relative}
+.dpz input{width:100%;box-sizing:border-box;border:1px solid #cfcfcf;border-radius:4px;padding:11px 56px 11px 12px;font:inherit;font-size:14px;background:#fff;color:#111;margin:0;height:auto}
+.dpz input:focus{outline:none;border-color:#111}
+.dpz-c{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#8c8c8c;pointer-events:none}.dpz-c.full{color:#b4193a}
+.dpz-note{display:flex;gap:10px;align-items:flex-start;background:#f4f4f4;border-radius:4px;padding:11px 12px;margin:14px 0 0 !important;font-size:12.5px;line-height:1.5;color:#444}
+.dpz-note svg{width:18px;height:18px;flex:0 0 18px;margin-top:1px}
+</style>
+<script>
+/* DOTS · Campos "Tu diseño" para Singlet Personalizado (hombre y mujer). Guarda Colores y Estampado en el pedido como properties[]. */
+(function(){
+  var IDS=[343839114,344112633];
+  function pid(){try{return (window.LS&&LS.product&&LS.product.id)||null}catch(e){return null}}
+  function isTarget(){var id=pid();if(id&&IDS.indexOf(+id)>-1)return true;return /\/productos\/singlet-de-competencia-(hombre|mujer)-personalizado/.test(location.pathname)}
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+  var FIELDS=[
+    {k:'Colores',id:'dpzCol',max:40,ph:'Ej: verde con recortes y costuras doradas',lbl:'Colores',opt:''},
+    {k:'Estampado',id:'dpzEst',max:60,ph:'Ej: NACHO en la espalda, bandera argentina',lbl:'Estampado',opt:' <i>(opcional)</i>',count:true}
+  ];
+  function build(){
+    var h='<div class="dpz" id="dots-pz"><div class="dpz-head"><span class="dpz-label">Tu diseño</span><span class="dpz-opt">Personalizado</span></div>';
+    FIELDS.forEach(function(f){h+='<label class="dpz-l" for="'+f.id+'">'+f.lbl+f.opt+'</label><div class="dpz-f"><input type="text" id="'+f.id+'" maxlength="'+f.max+'" placeholder="'+esc(f.ph)+'" autocomplete="off">'+(f.count?'<span class="dpz-c"><b>0</b>/'+f.max+'</span>':'')+'</div>'});
+    h+='<p class="dpz-note"><svg viewBox="0 0 24 24" fill="none" stroke="#b4193a" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>Nombre, frase, bandera o escudo: contanos qué querés estampar y el resto lo cerramos por WhatsApp. Los textos se estampan tal cual los escribís.</span></p></div>';
+    return h;
+  }
+  function init(){
+    if(!isTarget()||document.getElementById('dots-pz'))return;
+    var form=document.getElementById('product_form');if(!form)return;
+    var btn=form.querySelector('.js-addtocart');if(!btn)return;
+    var anchor=btn;for(var i=0;i<4&&anchor.parentElement&&anchor.parentElement!==form;i++){if(anchor.parentElement.querySelector('input[type=number], .js-quantity, [class*=quantity]'))break;anchor=anchor.parentElement}
+    if(anchor.parentElement&&anchor.parentElement.querySelector('.js-quantity, [class*=quantity]')&&anchor.parentElement!==form)anchor=anchor.parentElement;
+    var wrap=document.createElement('div');wrap.innerHTML=build();var mod=wrap.firstChild;
+    anchor.parentNode.insertBefore(mod,anchor);
+    FIELDS.forEach(function(f){
+      var inp=document.getElementById(f.id);
+      var hid=document.createElement('input');hid.type='hidden';hid.name='properties['+f.k+']';hid.value='';hid.disabled=true;form.appendChild(hid);
+      var cnt=f.count?inp.parentNode.querySelector('.dpz-c'):null;
+      function sync(){var v=inp.value.trim();hid.value=v;hid.disabled=!v;if(cnt){cnt.firstChild.textContent=inp.value.length;cnt.className='dpz-c'+(inp.value.length>=f.max?' full':'')}}
+      inp.addEventListener('input',sync);inp.addEventListener('change',sync);inp.addEventListener('blur',sync);
+      inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault()}});
+      sync();
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+  setTimeout(init,1200);
+})();
+</script>
+<!-- DOTS · CAMPOS SINGLET PERSONALIZADO (fin) -->
