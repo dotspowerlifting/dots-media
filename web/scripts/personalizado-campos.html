@@ -1,6 +1,6 @@
 <!-- DOTS · CAMPOS SINGLET PERSONALIZADO (inicio) -->
 <style>
-.dpz{margin:18px 0 16px;border:1px solid #e3e3e3;border-top:3px solid #b4193a;border-radius:4px;padding:16px 16px 14px;background:#fff;text-align:left}
+.dpz{margin:4px 0 18px;border:1px solid #e3e3e3;border-top:3px solid #b4193a;border-radius:4px;padding:16px 16px 14px;background:#fff;text-align:left}
 .dpz-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
 .dpz-label{font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#111}
 .dpz-opt{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8c8c8c}
@@ -33,8 +33,10 @@
     if(!isTarget()||document.getElementById('dots-pz'))return;
     var form=document.getElementById('product_form');if(!form)return;
     var btn=form.querySelector('.js-addtocart');if(!btn)return;
-    var anchor=btn;for(var i=0;i<4&&anchor.parentElement&&anchor.parentElement!==form;i++){if(anchor.parentElement.querySelector('input[type=number], .js-quantity, [class*=quantity]'))break;anchor=anchor.parentElement}
-    if(anchor.parentElement&&anchor.parentElement.querySelector('.js-quantity, [class*=quantity]')&&anchor.parentElement!==form)anchor=anchor.parentElement;
+    /* Va arriba de los talles para que se vea apenas entra; si no encuentra los talles, va arriba del boton de compra */
+    var anchor=document.querySelector('.js-product-variants')||form.querySelector('[data-variant], .variants, .js-product-variants-group');
+    if(!anchor){anchor=btn;for(var i=0;i<4&&anchor.parentElement&&anchor.parentElement!==form;i++){if(anchor.parentElement.querySelector('.js-quantity, [class*=quantity]'))break;anchor=anchor.parentElement}
+      if(anchor.parentElement&&anchor.parentElement!==form&&anchor.parentElement.querySelector('.js-quantity, [class*=quantity]'))anchor=anchor.parentElement}
     var wrap=document.createElement('div');wrap.innerHTML=build();var mod=wrap.firstChild;
     anchor.parentNode.insertBefore(mod,anchor);
     FIELDS.forEach(function(f){
