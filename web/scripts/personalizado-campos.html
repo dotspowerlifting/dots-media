@@ -24,7 +24,7 @@
     {k:'Estampado',id:'dpzEst',max:60,ph:'Ej: NACHO en la espalda, bandera argentina',lbl:'Estampado',opt:' <i>(opcional)</i>',count:true}
   ];
   function build(){
-    var h='<div class="dpz" id="dots-pz"><div class="dpz-head"><span class="dpz-label">Tu diseño</span><span class="dpz-opt">Personalizado</span></div>';
+    var h='<div class="dpz" id="dots-pz"><div class="dpz-head"><span class="dpz-label">Personalizá tu singlet</span></div>';
     FIELDS.forEach(function(f){h+='<label class="dpz-l" for="'+f.id+'">'+f.lbl+f.opt+'</label><div class="dpz-f"><input type="text" id="'+f.id+'" maxlength="'+f.max+'" placeholder="'+esc(f.ph)+'" autocomplete="off">'+(f.count?'<span class="dpz-c"><b>0</b>/'+f.max+'</span>':'')+'</div>'});
     h+='<p class="dpz-note"><svg viewBox="0 0 24 24" fill="none" stroke="#b4193a" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>Nombre, frase, bandera o escudo: contanos qué querés estampar y el resto lo cerramos por WhatsApp. Los textos se estampan tal cual los escribís.</span></p></div>';
     return h;
