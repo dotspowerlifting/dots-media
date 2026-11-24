@@ -1,0 +1,37 @@
+<!-- DOTS · FRANJA CONFIANZA PRODUCTO (inicio) -->
+<style>
+.dp-safe-wrap.dp-prod{display:none !important}
+.px.px-ep-pr .px-ep-seg{display:flex !important;gap:0 !important;margin:14px 0 4px !important;border:1px solid rgba(11,11,11,.12);border-radius:14px;overflow:hidden;background:#fff}
+.px.px-ep-pr .px-ep-seg .px-ep-s{flex:1 1 0;display:grid !important;grid-template-columns:18px auto;column-gap:8px;align-items:center;justify-content:center;text-align:left !important;background:none !important;border:0 !important;border-radius:0 !important;padding:12px 8px !important;min-width:0}
+.px.px-ep-pr .px-ep-seg .px-ep-s+.px-ep-s{border-left:1px solid rgba(11,11,11,.12) !important}
+.px.px-ep-pr .px-ep-seg .px-ep-s svg{grid-row:1 / span 2;width:18px !important;height:18px !important;margin:0 !important}
+.px.px-ep-pr .px-ep-seg .px-ep-s b{font-size:12px !important;line-height:1.2 !important;margin:0 !important;white-space:nowrap}
+.px.px-ep-pr .px-ep-seg .px-ep-s span{font-size:11px !important;line-height:1.25 !important;white-space:nowrap}
+.px.px-ep-pr .px-ep-wsp{margin-top:12px !important}
+@media (max-width:420px){
+ .px.px-ep-pr .px-ep-seg .px-ep-s{grid-template-columns:1fr;text-align:center !important;padding:10px 4px !important;justify-items:center}
+ .px.px-ep-pr .px-ep-seg .px-ep-s svg{grid-row:auto;margin:0 0 4px !important}
+ .px.px-ep-pr .px-ep-seg .px-ep-s b{font-size:10.5px !important;white-space:normal}
+ .px.px-ep-pr .px-ep-seg .px-ep-s span{font-size:9.5px !important;white-space:normal}
+}
+</style>
+<script>
+/* DOTS · Franja de confianza compacta: textos cortos y sin "Cambios" en los Singlets Personalizados */
+(function(){
+  var PERS=[343839114,344112633];
+  function isPers(){try{if(window.LS&&LS.product&&PERS.indexOf(+LS.product.id)>-1)return true}catch(e){}return /personalizado/.test(location.pathname)}
+  var SHORT={'Andreani o Correo Argentino':'Andreani o Correo','10 días hábiles, sin uso':'10 días hábiles','Coordinado después de comprar':'A coordinar'};
+  function fix(){
+    var seg=document.querySelector('.px.px-ep-pr .px-ep-seg');if(!seg||seg.getAttribute('data-dots-fx'))return !!seg;
+    seg.setAttribute('data-dots-fx','1');
+    [].forEach.call(seg.querySelectorAll('.px-ep-s'),function(s){
+      var b=s.querySelector('b'),sp=s.querySelector('span');
+      if(sp&&SHORT[sp.textContent.trim()])sp.textContent=SHORT[sp.textContent.trim()];
+      if(isPers()&&b&&/^Cambios/.test(b.textContent.trim()))s.parentNode.removeChild(s);
+    });
+    return true;
+  }
+  var n=0,t=setInterval(function(){if(fix()||++n>40)clearInterval(t)},250);
+})();
+</script>
+<!-- DOTS · FRANJA CONFIANZA PRODUCTO (fin) -->
