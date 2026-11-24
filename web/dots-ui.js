@@ -218,8 +218,8 @@ function editorFotos(){$$(".pxd-cat").forEach(function(a){var f=$(".pxd-cat-f",a
 /* ---------- Recomendador de talles ("¿Qué talle soy?") ---------- */
 var TALLES={
  sh:{nom:"Singlet hombre",cols:["Peso","Pecho","Cintura","Cadera"],u:["kg","cm","cm","cm"],rows:[
-  ["XS",[0,49],[0,91],[0,76],[0,91]],["S",[50,59],[92,96],[77,81],[92,96]],["M",[60,69],[97,101],[82,86],[97,101]],["L",[70,84],[102,106],[87,91],[102,106]],
-  ["XL",[85,99],[107,111],[92,96],[107,111]],["2XL",[100,114],[112,116],[97,101],[112,116]],["3XL",[115,129],[117,121],[102,106],[117,121]],["4XL",[130,144],[122,126],[107,111],[122,126]],["5XL",[145,999],[127,999],[112,999],[127,999]]]},
+  ["XS",[0,58],[0,91],[0,76],[0,91]],["S",[59,69],[92,96],[77,81],[92,96]],["M",[70,81],[97,101],[82,86],[97,101]],["L",[82,93],[102,106],[87,91],[102,106]],
+  ["XL",[94,104],[107,111],[92,96],[107,111]],["2XL",[105,116],[112,116],[97,101],[112,116]],["3XL",[117,128],[117,121],[102,106],[117,121]],["4XL",[129,140],[122,126],[107,111],[122,126]],["5XL",[141,999],[127,999],[112,999],[127,999]]]},
  sm:{nom:"Singlet mujer",cols:["Peso","Pecho","Cintura","Cadera"],u:["kg","cm","cm","cm"],rows:[
   ["2XS",[0,50],[0,82],[0,63],[0,89]],["XS",[51,60],[83,87],[64,70],[90,96]],["S",[61,64],[88,92],[71,74],[97,101]],["M",[65,72],[93,97],[75,80],[102,106]],
   ["L",[73,79],[98,103],[81,87],[107,112]],["XL",[80,88],[104,110],[88,94],[113,118]],["2XL",[89,999],[111,999],[95,999],[119,999]]]},
@@ -242,7 +242,18 @@ function idxRango(rows,col,v){for(var i=0;i<rows.length;i++){var r=rows[i][col+1
   for(var j=0;j<rows.length-1;j++){if(v>rows[j][col+1][1]&&v<rows[j+1][col+1][0])return j}return -1}
 /* Singlet mujer: el talle sale del PESO (relevamiento nov 2026, 22 clientas: el peso es lo que mejor predice; las medidas se mezclan entre XS, S y M por la elasticidad).
    Regla de seguridad: si pecho Y cintura dan un talle más grande que el peso, sube uno (nunca baja). Pecho/cadera muy distintos → sugiere consultar. */
-function calcSinglet(tipo,vals){var mujer=tipo==="sm",T=TALLES[tipo],R=T.rows,alt=vals[0],peso=vals[1],pe=vals[2],ci=vals[3],ca=vals[4];
+/* Singlet hombre (24/11/2026): calibrado con 8 antropometrías de atletas y amigos (acierta 8/8). Talle por PESO con la tabla nueva;
+   ±2,5 kg de un corte → muestra los dos talles. No sube por pecho/cintura (en powerlifters daba un talle de más). Medidas muy distintas → sugiere consultar. */
+function calcHombre(vals){var R=TALLES.sh.rows,alt=vals[0],peso=vals[1],pe=vals[2],ci=vals[3],cuts=[];
+  for(var k=0;k<R.length-1;k++)cuts.push((R[k][1][1]+R[k+1][1][0])/2);
+  var i=0;while(i<cuts.length&&peso>cuts[i])i++;var j=-1,det=["Peso "+String(peso).replace(".",",")+" kg → "+R[i][0]],best=null;
+  cuts.forEach(function(c,k){var d=peso-c;if(Math.abs(d)<=2.5&&(!best||Math.abs(d)<Math.abs(best.d)))best={k:k,d:d}});
+  if(best){i=best.k;j=best.k+1;det[0]="Peso "+String(peso).replace(".",",")+" kg → entre "+R[i][0]+" y "+R[j][0]}
+  var ipe=idxRango(R,1,pe),ici=idxRango(R,2,ci),dudas=(pe&&Math.abs(ipe-i)>=3)||(ci&&Math.abs(ici-i)>=3);
+  var nota="La tela es elástica y se adapta al cuerpo, por eso nos guiamos principalmente por el peso."+(alt>=188&&i<=4?" Como medís más de 1,88 m, escribinos y chequeamos el largo de torso.":"");
+  return {talle:R[i][0],alt:j>=0?R[j][0]:"",det:det,dudas:dudas,nota:nota,
+    entre:j>=0?"Estás justo entre "+R[i][0]+" y "+R[j][0]+". El "+R[i][0]+" queda más al cuerpo y el "+R[j][0]+", un poco más cómodo. Elegí según cómo te guste usarlo.":""}}
+function calcSinglet(tipo,vals){var mujer=tipo==="sm",T=TALLES[tipo],R=T.rows,alt=vals[0],peso=vals[1],pe=vals[2],ci=vals[3],ca=vals[4];if(!mujer)return calcHombre(vals);
   var ip=R.length-1;for(var q=0;q<R.length;q++){if(peso<=R[q][1][1]){ip=q;break}}var i=ip,j=-1,
     ipe=idxRango(R,1,pe),ici=idxRango(R,2,ci),ica=idxRango(R,3,ca),det=[];
   det.push("Peso "+String(peso).replace(".",",")+" kg → "+R[ip][0]);
@@ -268,7 +279,7 @@ function campos(tipo){if(tipo==="sm")return [["Altura (cm)","Ej: 160",true],["Pe
   if(tipo==="sh")return [["Altura (cm)","Ej: 175",true],["Peso (kg)","Ej: 82",true],["Contorno de pecho (cm)","Ej: 104",true],["Contorno de cintura (cm)","Ej: 88",true],["Contorno de cadera (cm)","Ej: 104",true]];
   if(tipo==="rc"||tipo==="ro")return [["Ancho de una remera que te quede bien (cm)","Medila de axila a axila, apoyada en una mesa",true]];
   if(tipo==="zp")return [["Largo de tu pie (cm)","Ej: 26,5",true]];if(tipo==="md")return [["¿Qué talle de calzado usás? (ARG)","Ej: 41",true]];return []}
-var RECO_ON={sm:true}; /* tipos con el recomendador prendido (sm = singlet mujer). Los demás se prueban con ?reco=1 en la URL */
+var RECO_ON={sm:true,sh:true}; /* tipos con el recomendador prendido (sm = singlet mujer). Los demás se prueban con ?reco=1 en la URL */
 function recomendador(){if(!document.body.classList.contains("template-product")||$(".dp-qt"))return;var tipo=tipoTalle();if(!tipo)return;if(!(RECO_ON[tipo]||/[?&]reco=1/.test(location.search)))return;var g=grupoTalle();if(!g)return;
   var st=document.createElement("style");st.textContent=".dp-qt-a{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font:700 12px/1 Inter,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#C02E3E;border-bottom:1.5px solid #C02E3E;padding-bottom:3px;margin:6px 0 10px}.dp-qt{position:fixed;inset:0;z-index:100000;background:rgba(14,14,16,.6);display:none;align-items:center;justify-content:center;padding:16px}.dp-qt.on{display:flex}.dp-qt-c{background:#fff;color:#0E0E10;border-radius:14px;max-width:420px;width:100%;max-height:90vh;overflow:auto;padding:24px 22px;font-family:Inter,system-ui,sans-serif;position:relative}.dp-qt-c h3{font:800 22px/1.1 Archivo,'Arial Black',system-ui,sans-serif!important;margin:0 0 4px!important;text-transform:none!important}.dp-qt-c p.s{color:#6B6B73;font-size:13.5px;margin:0 0 16px}.dp-qt-c label{display:block;font:600 13px/1.3 Inter,system-ui,sans-serif;margin:10px 0 5px}.dp-qt-c input{width:100%;box-sizing:border-box;height:44px;border:1px solid #D4D4D8;border-radius:8px;padding:0 12px;font-size:16px}.dp-qt-c .x{position:absolute;top:10px;right:12px;all:unset;cursor:pointer;font-size:22px;line-height:1;color:#6B6B73;position:absolute;top:12px;right:14px}.dp-qt-go{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;text-align:center;height:48px;line-height:48px;margin-top:16px;border-radius:6px;background:#C02E3E;color:#fff;font:700 13px/48px Inter,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase}.dp-qt-r{margin-top:18px;background:#F4F4F5;border-radius:10px;padding:16px;display:none}.dp-qt-r.on{display:block}.dp-qt-r b.t{display:block;font:800 30px/1 Archivo,'Arial Black',system-ui,sans-serif;color:#C02E3E;margin:4px 0 8px}.dp-qt-r ul{margin:0;padding-left:18px;font-size:13px;color:#3F3F46}.dp-qt-r .n{font-size:12.5px;color:#6B6B73;margin-top:8px}.dp-qt-r .w{display:inline-block;margin-top:10px;font-size:13px;font-weight:700;color:#1E9E52!important;text-decoration:none!important}";document.head.appendChild(st);
   var a=document.createElement("button");a.type="button";a.className="dp-qt-a";a.textContent="¿Qué talle soy?";
